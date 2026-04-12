@@ -1,0 +1,154 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Card from "@/components/Card";
+import MessageCard from "@/components/MessageCard";
+import Loader from "@/components/Loader";
+import { MessageCardSkeleton } from "@/components/Skeleton";
+import { useTaskStore } from "@/store/useTaskStore";
+import { useMessengerStore } from "@/store/useMessengerStore";
+import { useMessages } from "@/hooks/useMessages";
+
+export default function DashboardPage() {
+  const { planningTasks, learningTasks, loadFromStorage: loadTasks } = useTaskStore();
+  const { activeMessengers, loadFromStorage: loadMessengers } = useMessengerStore();
+  const { getRecentMessages, loading: loadingMessages } = useMessages();
+  const [mounted, setMounted] = useState(false);
+  const [recentMessages, setRecentMessages] = useState<MessageCardProps[]>([]);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    loadTasks();
+    loadMessengers();
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    async function fetchRecent() {
+      if (!mounted) return;
+      const allMessages: MessageCardProps[] = [];
+      for (const appId of activeMessengers.slice(0, 3)) {
+        const msgs = await getRecentMessages(appId, 3);
+        allMessages.push(...msgs);
+      }
+      allMessages.sort((a, b) => b.date.localeCompare(a.date));
+      setRecentMessages(allMessages.slice(0, 6));
+    }
+    if (mounted) {
+      fetchRecent();
+    }
+  }, [mounted, activeMessengers, getRecentMessages]);
+
+  const todayTasks = mounted ? planningTasks.filter((t) => t.date === today) : [];
+  const todayLearning = mounted ? learningTasks.filter((t) => t.date === today) : [];
+
+  interface MessageCardProps {
+    id: string;
+    app: string;
+    sender: string;
+    text: string;
+    date: string;
+  }
+
+  if (!mounted) {
+    return (
+      <div className="p-6 max-w-4xl">
+        <h1 className="text-2xl font-bold text-white mb-6">Dashboard</h1>
+        <div className="grid gap-6">
+          <Loader />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 max-w-4xl">
+      <h1 className="text-2xl font-bold text-white mb-6">Dashboard</h1>
+
+      <div className="grid gap-8">
+        <section>
+          <h2 className="text-lg font-semibold text-white mb-3">Recent Messages</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {loadingMessages ? (
+              [1, 2, 3, 4].map((i) => <MessageCardSkeleton key={i} />)
+            ) : recentMessages.length > 0 ? (
+              recentMessages.map((msg) => (
+                <Link key={msg.id} href={`/messages/${msg.app}`}>
+                  <Card className="hover:bg-gray-900/50 transition-colors h-full">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs text-gray-500 uppercase">{msg.app}</span>
+                      <p className="text-white font-medium text-sm">{msg.sender}</p>
+                      <p className="text-gray-400 text-sm truncate">{msg.text}</p>
+                      <p className="text-xs text-gray-600 mt-1">{msg.date}</p>
+                    </div>
+                  </Card>
+                </Link>
+              ))
+            ) : (
+              <Card>
+                <p className="text-gray-500 text-sm">No recent messages</p>
+              </Card>
+            )}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-white mb-3">Today Tasks</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {todayTasks.length > 0 ? (
+              todayTasks.map((task) => (
+                <Link key={task.id} href="/planning">
+                  <Card className="hover:bg-gray-900/50 transition-colors h-full">
+                    <div className="flex flex-col gap-1">
+                      <p className={`text-sm font-medium ${task.done ? "text-gray-500 line-through" : "text-white"}`}>
+                        {task.title}
+                      </p>
+                      <p className="text-gray-400 text-sm">{task.description}</p>
+                      <div className="flex gap-2 mt-2">
+                        <span className="text-xs text-gray-500">{task.category}</span>
+                        {task.time && <span className="text-xs text-gray-500">• {task.time}</span>}
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              ))
+            ) : (
+              <Card>
+                <p className="text-gray-500 text-sm">No tasks for today</p>
+              </Card>
+            )}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-white mb-3">Today Learning</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {todayLearning.length > 0 ? (
+              todayLearning.map((task) => (
+                <Link key={task.id} href="/learning">
+                  <Card className="hover:bg-gray-900/50 transition-colors h-full">
+                    <div className="flex flex-col gap-1">
+                      <p className={`text-sm font-medium ${task.done ? "text-gray-500 line-through" : "text-white"}`}>
+                        {task.title}
+                      </p>
+                      <p className="text-gray-400 text-sm">{task.description}</p>
+                      <div className="flex gap-2 mt-2">
+                        <span className="text-xs text-gray-500">{task.category}</span>
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              ))
+            ) : (
+              <Card>
+                <p className="text-gray-500 text-sm">No learning items for today</p>
+              </Card>
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
