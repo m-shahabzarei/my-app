@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(bun add *)",
+      "PowerShell(bun.cmd add @xyflow/react framer-motion lucide-react uuid html-to-image @radix-ui/react-context-menu)",
+      "PowerShell(New-Item *)",
+      "PowerShell(bun.cmd run lint)",
+      "PowerShell(bun.cmd run lint -- app/roadmap/page.tsx components/roadmap hooks/useRoadmapShortcuts.ts store/useRoadmapStore.ts lib/roadmap.ts components/Sidebar.tsx app/layout.tsx)",
+      "PowerShell(bun.cmd run build)",
+      "PowerShell(bun.cmd run lint -- app/roadmap/page.tsx components/roadmap hooks/useRoadmapShortcuts.ts store/useRoadmapStore.ts lib/roadmap.ts)",
+      "PowerShell(bun.cmd run lint -- components/roadmap app/roadmap/page.tsx store/useRoadmapStore.ts lib/roadmap.ts)"
+    ]
+  }
+}

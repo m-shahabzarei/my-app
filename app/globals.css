@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
 
 :root {
   --background: #000000;
@@ -16,4 +17,101 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.roadmap-canvas-frame:fullscreen {
+  border: 0;
+  border-radius: 0;
+  background: #020617;
+}
+
+.roadmap-canvas-frame:fullscreen .react-flow {
+  height: 100vh;
+}
+
+.roadmap-react-flow .react-flow__pane {
+  cursor: grab;
+}
+
+.roadmap-react-flow .react-flow__pane:active {
+  cursor: grabbing;
+}
+
+.roadmap-react-flow .react-flow__node {
+  filter: drop-shadow(0 24px 32px rgba(0, 0, 0, 0.35));
+}
+
+.roadmap-react-flow .react-flow__node.selected {
+  z-index: 20;
+}
+
+.roadmap-flow-edge .react-flow__edge-path {
+  stroke: rgba(167, 139, 250, 0.78);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.45));
+}
+
+.roadmap-flow-edge-child .react-flow__edge-path {
+  stroke: rgba(103, 232, 249, 0.78);
+  stroke-dasharray: 8 8;
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.42));
+}
+
+.roadmap-flow-edge .react-flow__edge-interaction {
+  stroke-width: 20;
+}
+
+.roadmap-flow-edge .react-flow__arrowhead path {
+  fill: rgba(216, 180, 254, 0.92);
+  stroke: rgba(216, 180, 254, 0.92);
+}
+
+.roadmap-handle {
+  width: 12px;
+  height: 12px;
+  border-width: 2px;
+  opacity: 0;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.react-flow__node:hover .roadmap-handle,
+.react-flow__node.selected .roadmap-handle {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+.roadmap-minimap {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  background: rgba(9, 9, 11, 0.78);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px);
+}
+
+.roadmap-minimap .react-flow__minimap-mask {
+  fill: rgba(15, 23, 42, 0.72);
+}
+
+.roadmap-controls {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: rgba(9, 9, 11, 0.78);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px);
+}
+
+.roadmap-controls button {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: white;
+}
+
+.roadmap-controls button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.roadmap-controls button svg {
+  fill: currentColor;
 }
