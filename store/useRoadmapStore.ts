@@ -12,9 +12,12 @@ import {
   cloneRoadmapGraph,
   createRoadmapEdge,
   createRoadmapNode,
+  DEFAULT_ROADMAP_STORAGE_SCOPE,
   DEFAULT_ROADMAP_VIEWPORT,
+  getRoadmapStorageKey,
   getStarterRoadmap,
   isRoadmapPersistedGraph,
+  normalizeRoadmapStorageScope,
   ROADMAP_STORAGE_KEY,
   serializeRoadmapGraph,
 } from "@/lib/roadmap";
@@ -24,6 +27,7 @@ import type {
   RoadmapHistoryEntry,
   RoadmapNode,
   RoadmapNodeData,
+  RoadmapPersistedGraph,
   RoadmapStatus,
 } from "@/types/roadmap";
 
@@ -40,10 +44,11 @@ interface RoadmapState extends RoadmapGraph {
   selectedNodeIds: string[];
   searchQuery: string;
   hasHydrated: boolean;
+  storageScope: string | null;
   viewport: Viewport;
   past: RoadmapHistoryEntry[];
   future: RoadmapHistoryEntry[];
-  loadFromStorage: () => void;
+  loadFromStorage: (scope?: string | null) => void;
   saveToStorage: () => void;
   resetToStarterData: () => void;
   captureHistory: () => void;
@@ -106,11 +111,29 @@ function sanitizeGraph(nodes: RoadmapNode[], edges: RoadmapEdge[]): RoadmapGraph
   };
 }
 
-function persistRoadmapGraph(nodes: RoadmapNode[], edges: RoadmapEdge[], viewport: Viewport): void {
+function readPersistedRoadmapGraph(storageKey: string): RoadmapPersistedGraph | null {
+  if (typeof window === "undefined") return null;
+
+  const stored = localStorage.getItem(storageKey);
+  if (!stored) return null;
+
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    if (isRoadmapPersistedGraph(parsed)) return parsed;
+  } catch {
+    localStorage.removeItem(storageKey);
+    return null;
+  }
+
+  localStorage.removeItem(storageKey);
+  return null;
+}
+
+function persistRoadmapGraph(nodes: RoadmapNode[], edges: RoadmapEdge[], viewport: Viewport, scope?: string | null): void {
   if (typeof window === "undefined") return;
 
   const graph = sanitizeGraph(nodes, edges);
-  localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(serializeRoadmapGraph(graph.nodes, graph.edges, viewport)));
+  localStorage.setItem(getRoadmapStorageKey(scope), JSON.stringify(serializeRoadmapGraph(graph.nodes, graph.edges, viewport)));
 }
 
 function createHistoryEntry(nodes: RoadmapNode[], edges: RoadmapEdge[]): RoadmapHistoryEntry {
@@ -240,7 +263,7 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
       : {};
 
     if (graphChanged || viewportChanged) {
-      persistRoadmapGraph(graph.nodes, graph.edges, viewport);
+      persistRoadmapGraph(graph.nodes, graph.edges, viewport, state.storageScope);
     }
 
     set({
@@ -258,44 +281,41 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
     selectedNodeIds: [],
     searchQuery: "",
     hasHydrated: false,
+    storageScope: null,
     viewport: DEFAULT_ROADMAP_VIEWPORT,
     past: [],
     future: [],
 
-    loadFromStorage: () => {
-      if (typeof window === "undefined" || get().hasHydrated) return;
+    loadFromStorage: (scope) => {
+      if (typeof window === "undefined") return;
 
-      const stored = localStorage.getItem(ROADMAP_STORAGE_KEY);
-      if (!stored) {
-        const starterRoadmap = getStarterRoadmap();
-        const starter = sanitizeGraph(starterRoadmap.nodes, starterRoadmap.edges);
+      const storageScope = normalizeRoadmapStorageScope(scope);
+      const state = get();
+      if (state.hasHydrated && state.storageScope === storageScope) return;
+
+      const storageKey = getRoadmapStorageKey(storageScope);
+      let persisted = readPersistedRoadmapGraph(storageKey);
+
+      if (!persisted && storageScope === DEFAULT_ROADMAP_STORAGE_SCOPE) {
+        persisted = readPersistedRoadmapGraph(ROADMAP_STORAGE_KEY);
+        if (persisted) {
+          const graph = sanitizeGraph(persisted.nodes, persisted.edges);
+          persistRoadmapGraph(graph.nodes, graph.edges, persisted.viewport ?? DEFAULT_ROADMAP_VIEWPORT, storageScope);
+        }
+      }
+
+      if (persisted) {
+        const graph = sanitizeGraph(persisted.nodes, persisted.edges);
         set({
-          ...starter,
+          ...graph,
           selectedNodeIds: [],
-          viewport: DEFAULT_ROADMAP_VIEWPORT,
+          viewport: persisted.viewport ?? DEFAULT_ROADMAP_VIEWPORT,
           hasHydrated: true,
+          storageScope,
           past: [],
           future: [],
         });
         return;
-      }
-
-      try {
-        const parsed: unknown = JSON.parse(stored);
-        if (isRoadmapPersistedGraph(parsed)) {
-          const graph = sanitizeGraph(parsed.nodes, parsed.edges);
-          set({
-            ...graph,
-            viewport: parsed.viewport ?? DEFAULT_ROADMAP_VIEWPORT,
-            selectedNodeIds: [],
-            hasHydrated: true,
-            past: [],
-            future: [],
-          });
-          return;
-        }
-      } catch {
-        localStorage.removeItem(ROADMAP_STORAGE_KEY);
       }
 
       const starterRoadmap = getStarterRoadmap();
@@ -305,14 +325,15 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
         selectedNodeIds: [],
         viewport: DEFAULT_ROADMAP_VIEWPORT,
         hasHydrated: true,
+        storageScope,
         past: [],
         future: [],
       });
     },
 
     saveToStorage: () => {
-      const { nodes, edges, viewport } = get();
-      persistRoadmapGraph(nodes, edges, viewport);
+      const { nodes, edges, viewport, storageScope } = get();
+      persistRoadmapGraph(nodes, edges, viewport, storageScope);
     },
 
     resetToStarterData: () => {
@@ -524,10 +545,10 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
     },
 
     setViewport: (viewport) => {
-      const { nodes, edges, viewport: currentViewport } = get();
+      const { nodes, edges, viewport: currentViewport, storageScope } = get();
       if (hasSameViewport(currentViewport, viewport)) return;
 
-      persistRoadmapGraph(nodes, edges, viewport);
+      persistRoadmapGraph(nodes, edges, viewport, storageScope);
       set({ viewport });
     },
 
@@ -541,7 +562,7 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
       const past = state.past.slice(0, -1);
       const graph = sanitizeGraph(previous.nodes, previous.edges);
 
-      persistRoadmapGraph(graph.nodes, graph.edges, state.viewport);
+      persistRoadmapGraph(graph.nodes, graph.edges, state.viewport, state.storageScope);
       set({ ...graph, selectedNodeIds: [], past, future });
     },
 
@@ -555,7 +576,7 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
       const past = [...state.past, current].slice(-HISTORY_LIMIT);
       const graph = sanitizeGraph(next.nodes, next.edges);
 
-      persistRoadmapGraph(graph.nodes, graph.edges, state.viewport);
+      persistRoadmapGraph(graph.nodes, graph.edges, state.viewport, state.storageScope);
       set({ ...graph, selectedNodeIds: [], past, future });
     },
   };

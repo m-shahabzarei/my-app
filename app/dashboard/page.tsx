@@ -3,65 +3,58 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Card from "@/components/Card";
-import MessageCard from "@/components/MessageCard";
-import Loader from "@/components/Loader";
 import { MessageCardSkeleton } from "@/components/Skeleton";
+import { comparePlanningTasks, formatTimeRange, todayKey } from "@/lib/planning";
+import { usePlanningStore } from "@/store/planning/usePlanningStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useMessengerStore } from "@/store/useMessengerStore";
 import { useMessages } from "@/hooks/useMessages";
 
+interface MessageCardProps {
+  id: string;
+  app: string;
+  sender: string;
+  text: string;
+  date: string;
+}
+
 export default function DashboardPage() {
-  const { planningTasks, learningTasks, loadFromStorage: loadTasks } = useTaskStore();
+  const planningTasks = usePlanningStore((state) => state.tasks);
+  const hydratePlanning = usePlanningStore((state) => state.hydrate);
+  const { learningTasks, loadFromStorage: loadLearningTasks } = useTaskStore();
   const { activeMessengers, loadFromStorage: loadMessengers } = useMessengerStore();
   const { getRecentMessages, loading: loadingMessages } = useMessages();
-  const [mounted, setMounted] = useState(false);
   const [recentMessages, setRecentMessages] = useState<MessageCardProps[]>([]);
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayKey();
 
   useEffect(() => {
-    loadTasks();
+    hydratePlanning();
+    loadLearningTasks();
     loadMessengers();
-    setMounted(true);
-  }, []);
+  }, [hydratePlanning, loadLearningTasks, loadMessengers]);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchRecent() {
-      if (!mounted) return;
       const allMessages: MessageCardProps[] = [];
       for (const appId of activeMessengers.slice(0, 3)) {
         const msgs = await getRecentMessages(appId, 3);
         allMessages.push(...msgs);
       }
       allMessages.sort((a, b) => b.date.localeCompare(a.date));
-      setRecentMessages(allMessages.slice(0, 6));
+      if (!cancelled) setRecentMessages(allMessages.slice(0, 6));
     }
-    if (mounted) {
-      fetchRecent();
-    }
-  }, [mounted, activeMessengers, getRecentMessages]);
 
-  const todayTasks = mounted ? planningTasks.filter((t) => t.date === today) : [];
-  const todayLearning = mounted ? learningTasks.filter((t) => t.date === today) : [];
+    fetchRecent();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeMessengers, getRecentMessages]);
 
-  interface MessageCardProps {
-    id: string;
-    app: string;
-    sender: string;
-    text: string;
-    date: string;
-  }
-
-  if (!mounted) {
-    return (
-      <div className="p-6 max-w-4xl">
-        <h1 className="text-2xl font-bold text-white mb-6">Dashboard</h1>
-        <div className="grid gap-6">
-          <Loader />
-        </div>
-      </div>
-    );
-  }
+  const todayTasks = planningTasks.filter((task) => task.date === today).sort(comparePlanningTasks);
+  const todayLearning = learningTasks.filter((task) => task.date === today);
 
   return (
     <div className="p-6 max-w-4xl">
@@ -102,13 +95,12 @@ export default function DashboardPage() {
                 <Link key={task.id} href="/planning">
                   <Card className="hover:bg-gray-900/50 transition-colors h-full">
                     <div className="flex flex-col gap-1">
-                      <p className={`text-sm font-medium ${task.done ? "text-gray-500 line-through" : "text-white"}`}>
+                      <p className={`text-sm font-medium ${task.completed ? "text-gray-500 line-through" : "text-white"}`}>
                         {task.title}
                       </p>
-                      <p className="text-gray-400 text-sm">{task.description}</p>
+                      {task.description && <p className="text-gray-400 text-sm">{task.description}</p>}
                       <div className="flex gap-2 mt-2">
-                        <span className="text-xs text-gray-500">{task.category}</span>
-                        {task.time && <span className="text-xs text-gray-500">• {task.time}</span>}
+                        <span className="text-xs text-gray-500">{formatTimeRange(task.startTime, task.endTime)}</span>
                       </div>
                     </div>
                   </Card>

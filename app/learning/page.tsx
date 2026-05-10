@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Card from "@/components/Card";
 import TaskModal from "@/components/TaskModal";
 import Checkbox from "@/components/Checkbox";
@@ -14,21 +14,21 @@ export default function LearningPage() {
 
   useEffect(() => {
     loadFromStorage();
-  }, []);
+  }, [loadFromStorage]);
 
   const handleAdd = (task: Omit<Task, "id" | "done">) => {
-    addTask("learning", task);
+    addTask(task);
   };
 
   const handleEdit = (task: Omit<Task, "id" | "done">) => {
     if (editingTask) {
-      updateTask("learning", editingTask.id, task);
+      updateTask(editingTask.id, task);
     }
   };
 
   const handleDelete = () => {
     if (editingTask) {
-      deleteTask("learning", editingTask.id);
+      deleteTask(editingTask.id);
       setModalOpen(false);
       setEditingTask(null);
     }
@@ -61,7 +61,7 @@ export default function LearningPage() {
           <Card key={task.id} className="hover:bg-gray-900/50 transition-colors cursor-pointer">
             <div onClick={() => openEditModal(task)}>
               <div className="flex items-start gap-3">
-                <div onClick={(e) => { e.stopPropagation(); toggleTaskDone("learning", task.id); }}>
+                <div onClick={(e) => { e.stopPropagation(); toggleTaskDone(task.id); }}>
                   <Checkbox checked={task.done} />
                 </div>
                 <div className="flex-1">
@@ -101,7 +101,7 @@ export default function LearningPage() {
           </Card>
         ))}
         {learningTasks.length === 0 && (
-          <p className="text-gray-500 text-sm text-center py-8">No learning items yet. Click "+ Add New" to create one.</p>
+          <p className="text-gray-500 text-sm text-center py-8">No learning items yet. Click Add New to create one.</p>
         )}
       </div>
 

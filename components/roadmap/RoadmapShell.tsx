@@ -13,7 +13,11 @@ import { exportRoadmapAsPng } from "@/lib/roadmap";
 import { useRoadmapStore } from "@/store/useRoadmapStore";
 import type { RoadmapEdge, RoadmapNode } from "@/types/roadmap";
 
-export default function RoadmapShell() {
+interface RoadmapShellProps {
+  storageScope?: string | null;
+}
+
+export default function RoadmapShell({ storageScope }: RoadmapShellProps) {
   const flowWrapperRef = useRef<HTMLDivElement | null>(null);
   const flowInstanceRef = useRef<ReactFlowInstance<RoadmapNode, RoadmapEdge> | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -41,8 +45,8 @@ export default function RoadmapShell() {
   );
 
   useEffect(() => {
-    loadFromStorage();
-  }, [loadFromStorage]);
+    loadFromStorage(storageScope);
+  }, [loadFromStorage, storageScope]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {

@@ -2,6 +2,10 @@
 
 import RoadmapShell from "@/components/roadmap/RoadmapShell";
 
-export default function RoadmapClientEntry() {
-  return <RoadmapShell />;
+interface RoadmapClientEntryProps {
+  storageScope?: string | null;
+}
+
+export default function RoadmapClientEntry({ storageScope }: RoadmapClientEntryProps) {
+  return <RoadmapShell storageScope={storageScope} />;
 }

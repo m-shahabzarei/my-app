@@ -1,0 +1,75 @@
+import { Bot, Code2, FileText, Image, MessageSquare, Mic, PanelsTopLeft, Video } from "lucide-react";
+import type { AiToolDefinition } from "@/types/ai/index";
+
+export const aiTools: AiToolDefinition[] = [
+  {
+    slug: "chat",
+    title: "Chat",
+    description: "A clean AI conversation workspace for future model integrations.",
+    href: "/ai/chat",
+    status: "active",
+    icon: MessageSquare,
+  },
+  {
+    slug: "image",
+    title: "Image Generation",
+    description: "Generate visual concepts, assets, and creative imagery with Z Image.",
+    href: "/ai/image",
+    status: "active",
+    icon: Image,
+  },
+  {
+    slug: "code",
+    title: "Code",
+    description: "Ask for code generation, debugging, refactors, and implementation explanations.",
+    href: "/ai/code",
+    status: "active",
+    icon: Code2,
+    accent: {
+      label: "OpenRouter · Qwen 3 Coder",
+      cardClassName: "border-cyan-300/20 bg-cyan-300/[0.055] hover:border-cyan-300/35 hover:bg-cyan-300/[0.075]",
+      iconClassName: "border-cyan-300/25 bg-cyan-300/10 text-cyan-100",
+      glowClassName: "from-transparent via-cyan-300/50 to-transparent",
+    },
+  },
+  {
+    slug: "video",
+    title: "Video Generation",
+    description: "Create short clips and motion concepts from prompts.",
+    href: "/ai/video",
+    status: "disabled",
+    icon: Video,
+  },
+  {
+    slug: "flashcards",
+    title: "Flashcard Generator",
+    description: "Turn notes and topics into focused study cards.",
+    href: "/ai/flashcards",
+    status: "disabled",
+    icon: Bot,
+  },
+  {
+    slug: "powerpoint",
+    title: "PowerPoint Generator",
+    description: "Draft structured slide decks from outlines.",
+    href: "/ai/powerpoint",
+    status: "disabled",
+    icon: PanelsTopLeft,
+  },
+  {
+    slug: "files",
+    title: "File Generator",
+    description: "Create structured documents and reusable files.",
+    href: "/ai/files",
+    status: "disabled",
+    icon: FileText,
+  },
+  {
+    slug: "speech-to-text",
+    title: "Speech To Text",
+    description: "Transcribe audio into clean editable text.",
+    href: "/ai/speech-to-text",
+    status: "disabled",
+    icon: Mic,
+  },
+];

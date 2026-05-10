@@ -17,9 +17,12 @@
     "lucide-react": "^1.14.0",
     "next": "16.2.3",
     "node-cron": "^4.2.1",
+    "openai": "^6.37.0",
     "playwright": "^1.59.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
     "uuid": "^14.0.0",
     "zustand": "^5.0.12"
   },

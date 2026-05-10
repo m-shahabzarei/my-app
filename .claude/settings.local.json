@@ -8,7 +8,11 @@
       "PowerShell(bun.cmd run lint -- app/roadmap/page.tsx components/roadmap hooks/useRoadmapShortcuts.ts store/useRoadmapStore.ts lib/roadmap.ts components/Sidebar.tsx app/layout.tsx)",
       "PowerShell(bun.cmd run build)",
       "PowerShell(bun.cmd run lint -- app/roadmap/page.tsx components/roadmap hooks/useRoadmapShortcuts.ts store/useRoadmapStore.ts lib/roadmap.ts)",
-      "PowerShell(bun.cmd run lint -- components/roadmap app/roadmap/page.tsx store/useRoadmapStore.ts lib/roadmap.ts)"
+      "PowerShell(bun.cmd run lint -- components/roadmap app/roadmap/page.tsx store/useRoadmapStore.ts lib/roadmap.ts)",
+      "PowerShell(npm run *)",
+      "PowerShell($deadline = \\(Get-Date\\).AddMinutes\\(2\\); do { try { $response = Invoke-WebRequest -UseBasicParsing -Uri \"http://127.0.0.1:3100/roadmap\" -TimeoutSec 5; if \\($response.StatusCode -eq 200\\) { \"ready\"; exit 0 } } catch { Start-Sleep -Seconds 1 } } while \\(\\(Get-Date\\) -lt $deadline\\); \"dev server did not become ready\"; exit 1)",
+      "PowerShell(git diff *)",
+      "PowerShell(git restore *)"
     ]
   }
 }

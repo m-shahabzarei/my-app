@@ -2,16 +2,35 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Briefcase,
+  CalendarDays,
+  GraduationCap,
+  Inbox,
+  LayoutDashboard,
+  Map,
+  MessagesSquare,
+  Settings,
+  Sparkles,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-const navItems = [
-  { name: "Dashboard", href: "/dashboard" },
-  { name: "Road Map", href: "/roadmap" },
-  { name: "My Messages", href: "/messages" },
-  { name: "Job Listings", href: "/jobs" },
-  { name: "Planning", href: "/planning" },
-  { name: "Learning", href: "/learning" },
-  { name: "Messengers", href: "/messengers" },
-  { name: "Job Sources", href: "/settings/jobs" },
+interface NavItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+}
+
+const navItems: NavItem[] = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Road Map", href: "/roadmap", icon: Map },
+  { name: "My Messages", href: "/messages", icon: Inbox },
+  { name: "Job Listings", href: "/jobs", icon: Briefcase },
+  { name: "Planning", href: "/planning", icon: CalendarDays },
+  { name: "AI", href: "/ai", icon: Sparkles },
+  { name: "Learning", href: "/learning", icon: GraduationCap },
+  { name: "Messengers", href: "/messengers", icon: MessagesSquare },
+  { name: "Job Sources", href: "/settings/jobs", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -25,17 +44,18 @@ export default function Sidebar() {
       <nav className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const Icon = item.icon;
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`shrink-0 rounded-xl px-3 py-2.5 text-sm transition-colors lg:p-3 ${
-                isActive
-                  ? "bg-white text-black"
-                  : "text-white hover:bg-gray-800"
+              className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-colors lg:p-3 ${
+                isActive ? "bg-white text-black" : "text-white hover:bg-gray-800"
               }`}
             >
-              {item.name}
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              <span className="whitespace-nowrap">{item.name}</span>
             </Link>
           );
         })}

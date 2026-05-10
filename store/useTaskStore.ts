@@ -1,120 +1,72 @@
 import { create } from "zustand";
-import { Task, ChecklistItem } from "@/types";
+import { Task } from "@/types";
 
 interface TaskState {
-  planningTasks: Task[];
   learningTasks: Task[];
   loadFromStorage: () => void;
-  addTask: (type: "planning" | "learning", task: Omit<Task, "id" | "done">) => void;
-  updateTask: (type: "planning" | "learning", taskId: string, updatedTask: Partial<Task>) => void;
-  deleteTask: (type: "planning" | "learning", taskId: string) => void;
-  toggleTaskDone: (type: "planning" | "learning", taskId: string) => void;
-  toggleChecklistItem: (type: "planning" | "learning", taskId: string, checklistItemId: string) => void;
+  addTask: (task: Omit<Task, "id" | "done">) => void;
+  updateTask: (taskId: string, updatedTask: Partial<Task>) => void;
+  deleteTask: (taskId: string) => void;
+  toggleTaskDone: (taskId: string) => void;
+  toggleChecklistItem: (taskId: string, checklistItemId: string) => void;
 }
 
 function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-const PLANNING_KEY = "planning_tasks";
 const LEARNING_KEY = "learning_tasks";
 
 export const useTaskStore = create<TaskState>((set, get) => ({
-  planningTasks: [],
   learningTasks: [],
 
   loadFromStorage: () => {
     if (typeof window === "undefined") return;
-    
-    const planningData = localStorage.getItem(PLANNING_KEY);
-    const learningData = localStorage.getItem(LEARNING_KEY);
 
-    set({
-      planningTasks: planningData ? JSON.parse(planningData) : [],
-      learningTasks: learningData ? JSON.parse(learningData) : [],
-    });
+    const learningData = localStorage.getItem(LEARNING_KEY);
+    set({ learningTasks: learningData ? JSON.parse(learningData) : [] });
   },
 
-  addTask: (type, task) => {
+  addTask: (task) => {
     const newTask: Task = {
       ...task,
       id: generateId(),
       done: false,
     };
 
-    const tasks = type === "planning" ? get().planningTasks : get().learningTasks;
-    const updatedTasks = [...tasks, newTask];
-
-    if (type === "planning") {
-      localStorage.setItem(PLANNING_KEY, JSON.stringify(updatedTasks));
-      set({ planningTasks: updatedTasks });
-    } else {
-      localStorage.setItem(LEARNING_KEY, JSON.stringify(updatedTasks));
-      set({ learningTasks: updatedTasks });
-    }
+    const updatedTasks = [...get().learningTasks, newTask];
+    localStorage.setItem(LEARNING_KEY, JSON.stringify(updatedTasks));
+    set({ learningTasks: updatedTasks });
   },
 
-  updateTask: (type, taskId, updatedTask) => {
-    const tasks = type === "planning" ? get().planningTasks : get().learningTasks;
-    const updatedTasks = tasks.map((task) =>
-      task.id === taskId ? { ...task, ...updatedTask } : task
-    );
-
-    if (type === "planning") {
-      localStorage.setItem(PLANNING_KEY, JSON.stringify(updatedTasks));
-      set({ planningTasks: updatedTasks });
-    } else {
-      localStorage.setItem(LEARNING_KEY, JSON.stringify(updatedTasks));
-      set({ learningTasks: updatedTasks });
-    }
+  updateTask: (taskId, updatedTask) => {
+    const updatedTasks = get().learningTasks.map((task) => (task.id === taskId ? { ...task, ...updatedTask } : task));
+    localStorage.setItem(LEARNING_KEY, JSON.stringify(updatedTasks));
+    set({ learningTasks: updatedTasks });
   },
 
-  deleteTask: (type, taskId) => {
-    const tasks = type === "planning" ? get().planningTasks : get().learningTasks;
-    const updatedTasks = tasks.filter((task) => task.id !== taskId);
-
-    if (type === "planning") {
-      localStorage.setItem(PLANNING_KEY, JSON.stringify(updatedTasks));
-      set({ planningTasks: updatedTasks });
-    } else {
-      localStorage.setItem(LEARNING_KEY, JSON.stringify(updatedTasks));
-      set({ learningTasks: updatedTasks });
-    }
+  deleteTask: (taskId) => {
+    const updatedTasks = get().learningTasks.filter((task) => task.id !== taskId);
+    localStorage.setItem(LEARNING_KEY, JSON.stringify(updatedTasks));
+    set({ learningTasks: updatedTasks });
   },
 
-  toggleTaskDone: (type, taskId) => {
-    const tasks = type === "planning" ? get().planningTasks : get().learningTasks;
-    const updatedTasks = tasks.map((task) =>
-      task.id === taskId ? { ...task, done: !task.done } : task
-    );
-
-    if (type === "planning") {
-      localStorage.setItem(PLANNING_KEY, JSON.stringify(updatedTasks));
-      set({ planningTasks: updatedTasks });
-    } else {
-      localStorage.setItem(LEARNING_KEY, JSON.stringify(updatedTasks));
-      set({ learningTasks: updatedTasks });
-    }
+  toggleTaskDone: (taskId) => {
+    const updatedTasks = get().learningTasks.map((task) => (task.id === taskId ? { ...task, done: !task.done } : task));
+    localStorage.setItem(LEARNING_KEY, JSON.stringify(updatedTasks));
+    set({ learningTasks: updatedTasks });
   },
 
-  toggleChecklistItem: (type, taskId, checklistItemId) => {
-    const tasks = type === "planning" ? get().planningTasks : get().learningTasks;
-    const updatedTasks = tasks.map((task) => {
+  toggleChecklistItem: (taskId, checklistItemId) => {
+    const updatedTasks = get().learningTasks.map((task) => {
       if (task.id !== taskId) return task;
       return {
         ...task,
-        checklist: task.checklist.map((item) =>
-          item.id === checklistItemId ? { ...item, done: !item.done } : item
-        ),
+        checklist: task.checklist.map((item) => (item.id === checklistItemId ? { ...item, done: !item.done } : item)),
       };
     });
 
-    if (type === "planning") {
-      localStorage.setItem(PLANNING_KEY, JSON.stringify(updatedTasks));
-      set({ planningTasks: updatedTasks });
-    } else {
-      localStorage.setItem(LEARNING_KEY, JSON.stringify(updatedTasks));
-      set({ learningTasks: updatedTasks });
-    }
+    localStorage.setItem(LEARNING_KEY, JSON.stringify(updatedTasks));
+    set({ learningTasks: updatedTasks });
   },
 }));

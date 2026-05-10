@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 
+@font-face {
+  font-family: "CinemaPersian";
+  src: url("/fonts/Cinema%20Font.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C, U+200D;
+}
+
 :root {
   --background: #000000;
   --foreground: #ffffff;
@@ -16,7 +25,68 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "CinemaPersian", Arial, Helvetica, sans-serif;
+}
+
+.code-markdown pre,
+.code-markdown code,
+.code-markdown kbd,
+.code-markdown samp {
+  font-family: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
+}
+
+.code-markdown .hljs-comment,
+.code-markdown .hljs-quote {
+  color: #71717a;
+  font-style: italic;
+}
+
+.code-markdown .hljs-keyword,
+.code-markdown .hljs-selector-tag,
+.code-markdown .hljs-subst {
+  color: #93c5fd;
+}
+
+.code-markdown .hljs-literal,
+.code-markdown .hljs-number,
+.code-markdown .hljs-template-variable,
+.code-markdown .hljs-variable {
+  color: #f0abfc;
+}
+
+.code-markdown .hljs-string,
+.code-markdown .hljs-doctag,
+.code-markdown .hljs-regexp {
+  color: #86efac;
+}
+
+.code-markdown .hljs-title,
+.code-markdown .hljs-section,
+.code-markdown .hljs-selector-id,
+.code-markdown .hljs-function .hljs-title {
+  color: #67e8f9;
+}
+
+.code-markdown .hljs-type,
+.code-markdown .hljs-class .hljs-title,
+.code-markdown .hljs-built_in,
+.code-markdown .hljs-builtin-name {
+  color: #fde68a;
+}
+
+.code-markdown .hljs-attr,
+.code-markdown .hljs-attribute,
+.code-markdown .hljs-name,
+.code-markdown .hljs-property,
+.code-markdown .hljs-selector-class {
+  color: #c4b5fd;
+}
+
+.code-markdown .hljs-meta,
+.code-markdown .hljs-symbol,
+.code-markdown .hljs-bullet,
+.code-markdown .hljs-link {
+  color: #f9a8d4;
 }
 
 .roadmap-canvas-frame:fullscreen {

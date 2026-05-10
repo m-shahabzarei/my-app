@@ -17,7 +17,17 @@ import {
 } from "@/types/roadmap";
 
 export const ROADMAP_STORAGE_KEY = "roadmap_graph_v1";
+export const DEFAULT_ROADMAP_STORAGE_SCOPE = "anonymous";
 export const DEFAULT_ROADMAP_VIEWPORT: Viewport = { x: 0, y: 0, zoom: 0.82 };
+
+export function normalizeRoadmapStorageScope(scope?: string | null): string {
+  const normalizedScope = scope?.trim().replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return normalizedScope || DEFAULT_ROADMAP_STORAGE_SCOPE;
+}
+
+export function getRoadmapStorageKey(scope?: string | null): string {
+  return `${ROADMAP_STORAGE_KEY}:${normalizeRoadmapStorageScope(scope)}`;
+}
 
 export const roadmapColorStyles: Record<RoadmapColor, RoadmapColorStyle> = {
   violet: {

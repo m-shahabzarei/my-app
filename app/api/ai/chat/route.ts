@@ -1,168 +1,98 @@
-import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit, retryWithBackoff } from "@/lib/ai";
+import { NextResponse } from "next/server";
+import { getAiModelById } from "@/config/ai-models";
+import { createAiChatCompletion, getProviderErrorResponse, isKnownAiProviderError } from "@/lib/ai/providers";
+import type { AiProviderChatMessage } from "@/lib/ai/providers";
+import type { AiChatMessage } from "@/types/ai/index";
 
-interface GeminiRequest {
-  message: string;
+type ChatRequestBody = {
+  model?: unknown;
+  modelId?: unknown;
+  messages?: unknown;
+};
+
+function isProviderMessage(message: unknown): message is AiProviderChatMessage {
+  if (!message || typeof message !== "object") return false;
+  const candidate = message as Partial<AiChatMessage>;
+  return (candidate.role === "user" || candidate.role === "assistant") && typeof candidate.content === "string";
 }
 
-interface GeminiResponse {
-  candidates: Array<{
-    content: {
-      parts: Array<{ text: string }>;
-    };
-  }>;
+function getRequestedModelId(body: ChatRequestBody): string | null {
+  if (typeof body.model === "string") return body.model;
+  if (typeof body.modelId === "string") return body.modelId;
+  return null;
 }
 
-interface GeminiErrorResponse {
-  error?: {
-    code: number;
-    message: string;
-    status: string;
-  };
+function parseRequestBody(body: ChatRequestBody) {
+  const requestedModelId = getRequestedModelId(body);
+
+  if (!requestedModelId) {
+    return { error: "Please select a valid AI model." } as const;
+  }
+
+  const model = getAiModelById(requestedModelId);
+  if (!model || !model.enabled || !model.capabilities.includes("chat")) {
+    return { error: "Selected model is not available for chat." } as const;
+  }
+
+  if (!Array.isArray(body.messages)) {
+    return { error: "Messages must be provided." } as const;
+  }
+
+  const messages = body.messages.filter(isProviderMessage).map((message) => ({
+    role: message.role,
+    content: message.content.trim(),
+  }));
+
+  if (messages.length === 0 || messages.every((message) => !message.content)) {
+    return { error: "Message content is empty." } as const;
+  }
+
+  return {
+    model,
+    messages: messages.filter((message) => message.content),
+  } as const;
 }
 
-export async function POST(request: NextRequest) {
-  const requestId = generateRequestId();
-  const clientIp = getClientIp(request);
-  
-  console.log(`[${requestId}] Incoming request from IP: ${clientIp}`);
+export async function POST(request: Request) {
+  let body: ChatRequestBody;
 
-  // Rate limiting
-  if (!checkRateLimit(clientIp)) {
-    console.warn(`[${requestId}] Rate limit exceeded for IP: ${clientIp}`);
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 }
-    );
+  try {
+    body = (await request.json()) as ChatRequestBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON request body." }, { status: 400 });
+  }
+
+  const parsed = parseRequestBody(body);
+  if ("error" in parsed) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
   try {
-    const body: GeminiRequest = await request.json();
-    const { message } = body;
+    const completion = await createAiChatCompletion(parsed.model, parsed.messages);
 
-    if (!message || typeof message !== "string") {
-      return NextResponse.json(
-        { error: "Message is required and must be a string" },
-        { status: 400 }
-      );
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error(`[${requestId}] Gemini API key is not configured`);
-      return NextResponse.json(
-        { error: "Gemini API key is not configured" },
-        { status: 500 }
-      );
-    }
-
-    const aiResponse = await callGeminiWithRetry(requestId, message, apiKey);
-
-    return NextResponse.json({ response: aiResponse });
+    return NextResponse.json({
+      message: {
+        role: "assistant",
+        content: completion.content,
+        ...(completion.reasoningContent ? { reasoning_content: completion.reasoningContent } : {}),
+      },
+    });
   } catch (error) {
-    console.error(`[${requestId}] Error in chat API:`, error);
+    if (isKnownAiProviderError(error)) {
+      const response = getProviderErrorResponse(error);
+      return NextResponse.json({ error: response.message }, { status: response.status });
+    }
+
+    const message = error instanceof Error ? error.message : "AI request failed.";
+    const missingApiKey = message.includes("_API_KEY");
+
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      {
+        error: missingApiKey
+          ? "AI provider is not configured. Add the required API key to .env.local."
+          : "The AI provider failed to respond.",
+      },
+      { status: missingApiKey ? 500 : 502 }
     );
   }
-}
-
-async function callGeminiWithRetry(
-  requestId: string,
-  message: string,
-  apiKey: string
-): Promise<string> {
-  return retryWithBackoff(
-    async () => {
-      console.log(`[${requestId}] Calling Gemini API...`);
-      
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: message,
-                  },
-                ],
-              },
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              topK: 40,
-              topP: 0.95,
-              maxOutputTokens: 512, // Reduced from 1024
-            },
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData: GeminiErrorResponse = await response.json().catch(() => ({}));
-        const errorMessage = errorData?.error?.message || "Unknown error";
-        
-        console.error(`[${requestId}] Gemini API error:`, {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorMessage,
-        });
-
-        if (response.status === 429) {
-          throw new Error(`Gemini API rate limit exceeded: ${errorMessage}`);
-        }
-
-        throw new Error(`Gemini API error ${response.status}: ${errorMessage}`);
-      }
-
-      const data: GeminiResponse = await response.json();
-      
-      if (!data.candidates || data.candidates.length === 0) {
-        throw new Error("No response generated from Gemini API");
-      }
-
-      const aiResponse = data.candidates[0].content.parts[0].text;
-      console.log(`[${requestId}] Gemini API response received successfully`);
-      
-      return aiResponse;
-    },
-    {
-      maxRetries: 3,
-      baseDelay: 1000,
-      shouldRetry: (error: Error) => error.message.includes("429"),
-    }
-  );
-}
-
-function generateRequestId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-function getClientIp(request: NextRequest): string {
-  // Try multiple headers that might contain the client IP
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const realIp = request.headers.get("x-real-ip");
-  const cfConnectingIp = request.headers.get("cf-connecting-ip");
-  
-  if (forwardedFor) {
-    // x-forwarded-for can contain multiple IPs, take the first one
-    return forwardedFor.split(",")[0].trim();
-  }
-  
-  if (realIp) {
-    return realIp;
-  }
-  
-  if (cfConnectingIp) {
-    return cfConnectingIp;
-  }
-  
-  // Fallback to a default value
-  return "unknown";
 }
