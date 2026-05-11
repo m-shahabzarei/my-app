@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Map,
   MessagesSquare,
+  Notebook,
   Settings,
   Sparkles,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   { name: "My Messages", href: "/messages", icon: Inbox },
   { name: "Job Listings", href: "/jobs", icon: Briefcase },
   { name: "Planning", href: "/planning", icon: CalendarDays },
+  { name: "Notes", href: "/notes", icon: Notebook },
   { name: "AI", href: "/ai", icon: Sparkles },
   { name: "Learning", href: "/learning", icon: GraduationCap },
   { name: "Messengers", href: "/messengers", icon: MessagesSquare },
