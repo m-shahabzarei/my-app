@@ -48,7 +48,7 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl">
+    <div className="p-6 w-full">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white">Job Listings</h1>
         <Link

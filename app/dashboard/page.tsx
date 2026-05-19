@@ -57,7 +57,7 @@ export default function DashboardPage() {
   const todayLearning = learningTasks.filter((task) => task.date === today);
 
   return (
-    <div className="p-6 max-w-4xl">
+    <div className="p-6">
       <h1 className="text-2xl font-bold text-white mb-6">Dashboard</h1>
 
       <div className="grid gap-8">

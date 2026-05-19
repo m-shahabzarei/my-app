@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -41,7 +42,15 @@ export default function Sidebar() {
   return (
     <aside className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-800 bg-black/95 p-2 backdrop-blur-xl lg:inset-x-auto lg:right-0 lg:top-0 lg:h-screen lg:w-64 lg:border-l lg:border-t-0 lg:p-4">
       <div className="mb-8 hidden lg:block">
-        <h1 className="text-3xl font-bold text-white">MY</h1>
+        <Image
+          src="/logo.png"
+          alt="MY"
+          width={120}
+          height={64}
+          className="h-auto w-28"
+          unoptimized
+          priority
+        />
       </div>
       <nav className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
         {navItems.map((item) => {
