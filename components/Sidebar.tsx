@@ -14,6 +14,7 @@ import {
   Notebook,
   Settings,
   Sparkles,
+  Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
   { name: "Planning", href: "/planning", icon: CalendarDays },
   { name: "Notes", href: "/notes", icon: Notebook },
   { name: "AI", href: "/ai", icon: Sparkles },
+  { name: "Budget", href: "/budget", icon: Wallet },
   { name: "Learning", href: "/learning", icon: GraduationCap },
   { name: "Messengers", href: "/messengers", icon: MessagesSquare },
   { name: "Job Sources", href: "/settings/jobs", icon: Settings },
